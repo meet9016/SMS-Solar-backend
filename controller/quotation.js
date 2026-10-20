@@ -9,16 +9,25 @@ const Lead = require('../model/lead');
 
 let globalBrowser = null;
 const getBrowser = async () => {
-  if (!globalBrowser) {
+  if (!globalBrowser || !globalBrowser.connected) {
+    try {
+      if (globalBrowser) {
+        await globalBrowser.close().catch(() => {});
+      }
+    } catch (_) {}
     globalBrowser = await puppeteer.launch({
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    });
+    globalBrowser.on('disconnected', () => {
+      globalBrowser = null;
     });
   }
   return globalBrowser;
 };
 
 const generatePdfBuffer = async (quotation, lead) => {
+  let page;
   try {
     const templatePath = path.join(__dirname, '../views/quotationTemplate.ejs');
     
@@ -117,29 +126,42 @@ const generatePdfBuffer = async (quotation, lead) => {
 
     const browser = await getBrowser();
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
+    if (!browser.connected) {
+      throw new Error("Puppeteer browser is disconnected");
+    }
 
-    // Allow JS in template to run and calculate values
-    await page.evaluate(() => new Promise(r => setTimeout(r, 100)));
+    page = await browser.newPage();
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '0px',
-        right: '0px',
-        bottom: '0px',
-        left: '0px'
-      }
+    await page.setContent(html, {
+      waitUntil: "load",
+      timeout: 30000,
     });
 
-    await page.close();
-    // Convert Uint8Array to Buffer for Express res.send
+    // Allow JS in template to run and calculate values
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 100)));
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: {
+        top: "0px",
+        right: "0px",
+        bottom: "0px",
+        left: "0px",
+      },
+    });
+
     return Buffer.from(pdfBuffer);
   } catch (error) {
     console.error("Puppeteer PDF generation error:", error);
+    globalBrowser = null;
     throw error;
+  } finally {
+    if (page) {
+      await page.close().catch((err) => {
+        console.error("Error closing Puppeteer page:", err.message);
+      });
+    }
   }
 };
 
