@@ -895,6 +895,29 @@
 <body>
   <div class="app">
     <main class="workspace">
+      <%
+        const cleanNumber = (val) => {
+          if (val === undefined || val === null) return 0;
+          const s = String(val).replace(/[^0-9.]/g, '');
+          return parseFloat(s) || 0;
+        };
+
+        const findRowVal = (keywords, excludeKeywords = []) => {
+          if (!quotation || !quotation.rows) return 0;
+          const row = quotation.rows.find(r => {
+            const t = (r && r.title ? r.title : '').toLowerCase();
+            const matchesKw = keywords.some(kw => t.includes(kw));
+            const matchesExclude = excludeKeywords.some(ex => t.includes(ex));
+            return matchesKw && !matchesExclude;
+          });
+          return row && row.values && row.values[0] !== undefined ? cleanNumber(row.values[0]) : 0;
+        };
+
+        const pdfGross = findRowVal(['gross', 'customer payable']);
+        const pdfCentralSubsidy = findRowVal(['central', 'cen', 'subsidy'], ['gujarat', 'gujrat', 'guj', 'net', 'less']);
+        const pdfGujaratSubsidy = findRowVal(['gujarat', 'gujrat', 'guj']);
+        const pdfCustomerAmt = Math.max(0, pdfGross - pdfCentralSubsidy - pdfGujaratSubsidy);
+      %>
       <div id="injectedData" style="display:none;">
         <input id="size"
           value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('size') || t.includes('capacity'); })?.values[0] || 0 %>" />
@@ -903,9 +926,11 @@
         <input id="rate"
           value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('unit') || t.includes('rate'); })?.values[0] || 0 %>" />
         <input id="gross"
-          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('gross') || t.includes('customer payable'); })?.values[0] || 0 %>" />
+          value="<%= pdfGross %>" />
         <input id="subsidy"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 0 %>" />
+          value="<%= pdfCentralSubsidy %>" />
+        <input id="gujaratSubsidy"
+          value="<%= pdfGujaratSubsidy %>" />
         <input id="loan"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
         <input id="geda"
@@ -938,8 +963,8 @@
           style="position:relative; background-color:#fff; padding:0; overflow:hidden; height:297mm !important; min-height:297mm !important;">
           <!-- Background Image with Gradient for Text Readability -->
           <div style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:0;">
-            <% let bannerImg='residentialbanner.jpg' ; /* default to residential */ let pTypeForBanner=(lead.projecttype ||
-              lead.projectType || '' ).toLowerCase(); if (pTypeForBanner.includes('commercial')) {
+            <% let bannerImg='residentialbanner.jpg' ; /* default to residential */ let pTypeForBanner=(lead.projecttype
+              || lead.projectType || '' ).toLowerCase(); if (pTypeForBanner.includes('commercial')) {
               bannerImg='commercialbanner.png' ; } else if (pTypeForBanner.includes('industr')) {
               bannerImg='Industrialbanner.jpeg' ; } %>
               <img src="<%= basePath %>/pdfs/<%= bannerImg %>"
@@ -1001,7 +1026,7 @@
                     <%= lead.fullName || data.fullName || "Customer" %>
                   </h2>
                   <p style="font-size:15px; font-weight:800; color:#1c1620; margin:8px 0 0 0;">
-                    <%= lead.contact ||  "" %>
+                    <%= lead.contact || "" %>
                   </p>
                 </div>
                 <div
@@ -1074,18 +1099,21 @@
           </div>
           <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
           <div class="kicker">03 · Proposed system</div>
-          <h2 style="font-size:22px; line-height:1.25; word-wrap:break-word; margin:4px 0 10px;">Designed for <span data-name>
+          <h2 style="font-size:22px; line-height:1.25; word-wrap:break-word; margin:4px 0 10px;">Designed for <span
+              data-name>
               <%= lead.fullName || data.fullName || "Customer" %>
             </span>.</h2>
           <div class="twocol">
             <div class="offer">
               <div class="row"><span>System size</span><b data-size>5 KW</b></div>
               <div class="row"><span>Solar module</span><b data-module>
-                  <%= quotation.solarModule || (quotation.rows && quotation.rows.find(r => r.title.toLowerCase().includes('module'))?.values[0]) || "-" %>
+                  <%= quotation.solarModule || (quotation.rows && quotation.rows.find(r=>
+                    r.title.toLowerCase().includes('module'))?.values[0]) || "-" %>
                 </b></div>
               <div class="row"><span>Module quantity</span><b data-panels>10 × 550 W</b></div>
               <div class="row"><span>Inverter</span><b data-inverter>
-                  <%= quotation.inverter || (quotation.rows && quotation.rows.find(r => r.title.toLowerCase().includes('inverter'))?.values[0]) || "-" %>
+                  <%= quotation.inverter || (quotation.rows && quotation.rows.find(r=>
+                    r.title.toLowerCase().includes('inverter'))?.values[0]) || "-" %>
                 </b></div>
               <div class="row"><span>Roof / area</span><b data-area>Flat · 500 sq ft</b></div>
             </div>
@@ -1188,12 +1216,14 @@
           <h2>Transparent investment. Measurable return.</h2>
           <div class="twocol" style="margin-top:15px;">
             <div class="offer">
-              <div class="row"><span>Gross system amount</span><b data-gross>₹325,000</b></div>
-              <div class="row"><span>Government subsidy</span><b data-subsidy>₹78,000</b></div>
-              <div class="row"><span>Customer amount</span><b data-custamt>₹247,000</b></div>
+              <div class="row"><span>Gross system amount</span><b data-gross><%= '₹' + Math.round(pdfGross).toLocaleString('en-IN') %></b></div>
+              <div class="row"><span>Central Gov subsidy</span><b data-subsidy><%= '₹' + Math.round(pdfCentralSubsidy).toLocaleString('en-IN') %></b></div>
+              <div class="row" id="row-gujarat-subsidy"><span>Gujarat Gov subsidy</span><b data-gujarat-subsidy><%= '₹' + Math.round(pdfGujaratSubsidy).toLocaleString('en-IN') %></b></div>
+              <div class="row"><span>Customer amount</span><b data-custamt><%= '₹' + Math.round(pdfCustomerAmt).toLocaleString('en-IN') %></b></div>
               <div class="row"><span>Annual savings</span><b data-annualsave>₹64,800</b></div>
               <div class="row"><span>25-year savings</span><b data-save25>₹16.2L</b></div>
-              <div class="row" id="row-geda" style="display:none;"><span>GEDA Registration</span><b data-geda>₹0</b></div>
+              <div class="row" id="row-geda" style="display:none;"><span>GEDA Registration</span><b data-geda>₹0</b>
+              </div>
               <div class="row" id="row-meter" style="display:none;"><span>Meter Charge</span><b data-meter>₹0</b></div>
             </div>
             <div class="pay"><small>Customer payable</small><b data-payable>₹3,25,000</b>
@@ -1327,7 +1357,7 @@
         <section class="page">
           <div class="kicker" style="margin-top: 30px;">09 · Detailed specifications</div>
           <h2>Bill of Materials (1/2)</h2>
-          <%
+          <% 
             let getRowVal = (titles) => {
               if (!quotation || !quotation.rows) return '';
               if (!Array.isArray(titles)) titles = [titles];
@@ -1342,81 +1372,96 @@
               return '';
             };
 
-            let bomModule = quotation.solarModule || getRowVal(['solar module product', 'solar module', 'module']) || 'Adani / Goldi / Waaree / Rayzon / Pahal';
-            let bomInverter = quotation.inverter || getRowVal(['inverter product', 'inverter']) || 'Solaryaan / Velox';
+            const cableTags = [`solar cable product`, `solar cable`, `cable`];
+            let bomModule = quotation.solarModule || getRowVal([`solar module product`, `solar module`, `module`]) || `Adani / Goldi / Waaree / Rayzon / Pahal`;
+            let bomInverter = quotation.inverter || getRowVal([`inverter product`, `inverter`]) || `Solaryaan / Velox`;
             
-            let dcProt = getRowVal(['dc protection', 'dcdb']);
-            let acProt = getRowVal(['ac protection', 'acdb']);
+            let dcProt = getRowVal([`dc protection`, `dcdb`]);
+            let acProt = getRowVal([`ac protection`, `acdb`]);
             let acdcArray = [];
             if (acProt) acdcArray.push(acProt);
             if (dcProt && dcProt !== acProt) acdcArray.push(dcProt);
-            let bomAcdcDcdb = acdcArray.length > 0 ? acdcArray.join(' / ') : 'Simens';
+            let bomAcdcDcdb = acdcArray.length > 0 ? acdcArray.join(' / ') : `Simens`;
 
-            let bomAcCable = getRowVal(['ac cable', 'ac cable product']) || getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
-            let bomDcCable = getRowVal(['dc cable', 'dc cable product']) || getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
-            let bomEarthingCable = getRowVal(['earthing cable', 'earthing cable product']) || getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
-            let bomLaCable = getRowVal(['la cable', 'la cable product']) || 'Polycab 16SQMM (AL)';
-            let bomStructure = getRowVal(['structure product', 'structure']) || 'Hindustan 60 x 40 2 mm ( 80 x 40 x 2mm if required )';
+            let bomAcCable = getRowVal([`ac cable`, `ac cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
+            let bomDcCable = getRowVal([`dc cable`, `dc cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
+            let bomEarthingCable = getRowVal([`earthing cable`, `earthing cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
+            let bomLaCable = getRowVal([`la cable`, `la cable product`]) || `Polycab 16SQMM (AL)`;
+            let bomStructure = getRowVal([`structure product`, `structure`]) || `Hindustan 60 x 40 2 mm ( 80 x 40 x 2mm if required )`;
           %>
-          <table class="spec-table">
-            <tbody>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_SOLAR PANEL.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">SOLAR MODULES</td>
-                <td class="desc-col"><b><%= bomModule %></b><br>with 30 years output warranty,
-                  IP67 rated junction box protection.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/SOLAR INVERTER.png"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">INVERTER</td>
-                <td class="desc-col"><b><%= bomInverter %></b><br>with 10 year warranty, Wi-Fi / GPRS monitoring, IEC
-                  62109-1/2, IEC 61727, IEC 61683, MNRE approved.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_ACDB DCDB.jpeg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">ACDB / DCDB</td>
-                <td class="desc-col"><b><%= bomAcdcDcdb %></b> MCB and SPD, IP65 / IP66, powder coated CRCA steel or polycarbonate,
-                  UV stabilized.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_AC CABLE.jpeg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">AC CABLE</td>
-                <td class="desc-col"><b><%= bomAcCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
-                  60228), temperature rating -10°C to +70°C.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_DC CABLE.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">DC CABLE</td>
-                <td class="desc-col"><b><%= bomDcCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
-                  60228), temperature rating -40°C to +120°C.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/EARTHING CABLE.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">EARTHING CABLE</td>
-                <td class="desc-col"><b><%= bomEarthingCable %></b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
-                  for flexibility.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/LA CABLE.png"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">LA CABLE</td>
-                <td class="desc-col"><b><%= bomLaCable %></b><br>XLPE insulated, PVC sheathed.</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/PVC PIPE.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">PVC CONDUIT PIPE</td>
-                <td class="desc-col"><b>Domia 20MM</b> (ELBOW, COUPLER, BEND, TEE, SADDLE)</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">06</span></div>
+            <table class="spec-table">
+              <tbody>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_SOLAR PANEL.jpg"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">SOLAR MODULES</td>
+                  <td class="desc-col"><b>
+                      <%= bomModule %>
+                    </b><br>with 30 years output warranty,
+                    IP67 rated junction box protection.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/SOLAR INVERTER.png"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">INVERTER</td>
+                  <td class="desc-col"><b>
+                      <%= bomInverter %>
+                    </b><br>with 10 year warranty, Wi-Fi / GPRS monitoring, IEC
+                    62109-1/2, IEC 61727, IEC 61683, MNRE approved.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_ACDB DCDB.jpeg"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">ACDB / DCDB</td>
+                  <td class="desc-col"><b>
+                      <%= bomAcdcDcdb %>
+                    </b> MCB and SPD, IP65 / IP66, powder coated CRCA steel or polycarbonate,
+                    UV stabilized.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_AC CABLE.jpeg"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">AC CABLE</td>
+                  <td class="desc-col"><b>
+                      <%= bomAcCable %>
+                    </b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                    60228), temperature rating -10°C to +70°C.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_DC CABLE.jpg"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">DC CABLE</td>
+                  <td class="desc-col"><b>
+                      <%= bomDcCable %>
+                    </b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                    60228), temperature rating -40°C to +120°C.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/EARTHING CABLE.jpg"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">EARTHING CABLE</td>
+                  <td class="desc-col"><b>
+                      <%= bomEarthingCable %>
+                    </b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
+                    for flexibility.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/LA CABLE.png"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">LA CABLE</td>
+                  <td class="desc-col"><b>
+                      <%= bomLaCable %>
+                    </b><br>XLPE insulated, PVC sheathed.</td>
+                </tr>
+                <tr>
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/PVC PIPE.jpg"
+                      style="width:75px; height:75px; object-fit:contain;" /></td>
+                  <td class="title-col">PVC CONDUIT PIPE</td>
+                  <td class="desc-col"><b>Domia 20MM</b> (ELBOW, COUPLER, BEND, TEE, SADDLE)</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">06</span></div>
         </section>
         <section class="page">
           <div class="kicker" style="margin-top: 30px;">10 · Detailed specifications</div>
@@ -1434,7 +1479,9 @@
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/STRUCTURE.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">STRUCTURE PIPE</td>
-                <td class="desc-col"><b><%= bomStructure %></b><br>40x40mm, 80x40mm,
+                <td class="desc-col"><b>
+                    <%= bomStructure %>
+                  </b><br>40x40mm, 80x40mm,
                   80x40mm (2.0 mm thickness) IS 1161/ IS 4923 / ASTM A500 / IS 2062, ≥15 years outdoor life</td>
               </tr>
               <tr>
@@ -1552,7 +1599,7 @@
                   <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Customer signature
                   </div>
                   <div style="font-size:13px; color:var(--ink); font-weight:600;" data-name>
-                    <%= lead.fullName || data.fullName ||  "Customer" %>
+                    <%= lead.fullName || data.fullName || "Customer" %>
                   </div>
                 </div>
               </div>
@@ -1638,8 +1685,9 @@
 
     function calc() {
       let s = +$('size').value || 0, w = +$('watt').value || 1, r = +$('rate').value || 0, g = +$('gross').value || 0, sub = +$('subsidy').value || 0, loan = +$('loan').value || 0, bill = +$('bill').value || 0;
+      let gujSub = ($('gujaratSubsidy') ? +$('gujaratSubsidy').value : 0) || 0;
       let gedaVal = ($('geda') ? $('geda').value.trim() : ''), meterVal = ($('meter') ? $('meter').value.trim() : '');
-      let pan = Math.round(s * 1000 / w), daily = s * 4, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100);
+      let pan = Math.round(s * 1000 / w), daily = s * 4, mon = daily * 30, ann = daily * 365, pay = Math.max(0, g - sub - gujSub), save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100);
       let gen25 = 0, cGen = ann, cs = [0, 0, 0, 0], ts = 0, cRate = r;
       for (let i = 1; i <= 25; i++) { gen25 += cGen; let ys = cGen * cRate; ts += ys; if (i === 1) cs[0] = ts; if (i === 5) cs[1] = ts; if (i === 10) cs[2] = ts; if (i === 25) cs[3] = ts; cGen *= 0.995; cRate *= 1.03; }
       let nameVal = $('name').value || '<%= lead.fullName || data.fullName || "Customer" %>';
@@ -1672,6 +1720,10 @@
       set('[data-save25]', compact(cs[3]));
       set('[data-gross]', money(g));
       set('[data-subsidy]', money(sub));
+      if ($('row-gujarat-subsidy')) {
+        $('row-gujarat-subsidy').style.display = 'flex';
+        set('[data-gujarat-subsidy]', money(gujSub));
+      }
       set('[data-loan]', money(loan));
       set('[data-custamt]', money(pay));
       set('[data-payable]', money(g));
