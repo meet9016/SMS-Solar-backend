@@ -10,6 +10,7 @@ let {
   staffUpdate,
   staffDelete,
   getCurrentStaff,
+  changePassword,
 } = require("../controller/staff");
 const authMiddleware = require("../middleware/auth");
 const { authorize } = require("../middleware/permissions");
@@ -17,6 +18,7 @@ const { authorize } = require("../middleware/permissions");
 router.post("/create", upload.single("profileImage"), createStaff);
 router.post("/login", loginStaff);
 router.get("/me", authMiddleware, getCurrentStaff);
+router.put("/change-password", authMiddleware, changePassword);
 router.get(
   "/",
   authMiddleware,

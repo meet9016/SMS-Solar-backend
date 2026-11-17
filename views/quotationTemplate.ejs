@@ -895,783 +895,801 @@
 <body>
   <div class="app">
     <main class="workspace">
-      <%
-        const cleanNumber = (val) => {
-          if (val === undefined || val === null) return 0;
-          const s = String(val).replace(/[^0-9.]/g, '');
-          return parseFloat(s) || 0;
+      <% const cleanNumber=(val)=> {
+        if (val === undefined || val === null) return 0;
+        const s = String(val).replace(/[^0-9.]/g, '');
+        return parseFloat(s) || 0;
         };
 
         const findRowVal = (keywords, excludeKeywords = []) => {
-          if (!quotation || !quotation.rows) return 0;
-          const row = quotation.rows.find(r => {
-            const t = (r && r.title ? r.title : '').toLowerCase();
-            const matchesKw = keywords.some(kw => t.includes(kw));
-            const matchesExclude = excludeKeywords.some(ex => t.includes(ex));
-            return matchesKw && !matchesExclude;
-          });
-          return row && row.values && row.values[0] !== undefined ? cleanNumber(row.values[0]) : 0;
+        if (!quotation || !quotation.rows) return 0;
+        const row = quotation.rows.find(r => {
+        const t = (r && r.title ? r.title : '').toLowerCase();
+        const matchesKw = keywords.some(kw => t.includes(kw));
+        const matchesExclude = excludeKeywords.some(ex => t.includes(ex));
+        return matchesKw && !matchesExclude;
+        });
+        return row && row.values && row.values[0] !== undefined ? cleanNumber(row.values[0]) : 0;
         };
 
         const pdfGross = findRowVal(['gross', 'customer payable']);
-        const pdfCentralSubsidy = findRowVal(['central', 'cen', 'subsidy'], ['gujarat', 'gujrat', 'guj', 'net', 'less']);
+        const pdfCentralSubsidy = findRowVal(['central', 'cen', 'subsidy'], ['gujarat', 'gujrat', 'guj', 'net',
+        'less']);
         const pdfGujaratSubsidy = findRowVal(['gujarat', 'gujrat', 'guj']);
         const pdfCustomerAmt = Math.max(0, pdfGross - pdfCentralSubsidy - pdfGujaratSubsidy);
-      %>
-      <div id="injectedData" style="display:none;">
-        <input id="size"
-          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('size') || t.includes('capacity'); })?.values[0] || 0 %>" />
-        <input id="watt"
-          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('module w') || t === 'wp'; })?.values[0] || 0 %>" />
-        <input id="rate"
-          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('unit') || t.includes('rate'); })?.values[0] || 0 %>" />
-        <input id="gross"
-          value="<%= pdfGross %>" />
-        <input id="subsidy"
-          value="<%= pdfCentralSubsidy %>" />
-        <input id="gujaratSubsidy"
-          value="<%= pdfGujaratSubsidy %>" />
-        <input id="loan"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
-        <input id="geda"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('geda'))?.values[0] || '' %>" />
-        <input id="meter"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('meter'))?.values[0] || '' %>" />
-        <input id="bill"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 0 %>" />
-        <input id="name" value="<%= lead.fullName || data.fullName || 'Customer' %>" />
-        <input id="proposal" value="<%= lead.leadrefrance || 'N/A' %>" />
-        <input id="exec" value="<%= lead.assignName || lead.assignedTo?.fullName || 'Sales Executive' %>" />
-        <input id="module" value="<%= quotation.solarModule %>" />
-        <input id="inverter" value="<%= quotation.inverter %>" />
-        <input id="structure"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('structure'))?.values[0] || '' %>" />
-        <input id="dcdb"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('dc protection'))?.values[0] || '' %>" />
-        <input id="acdb"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('ac protection'))?.values[0] || '' %>" />
-        <input id="cable"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('cable'))?.values[0] || '' %>" />
-        <input id="roof"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('roof'))?.values[0] || 'Flat Roof' %>" />
-      </div>
-      <div class="toolbar"><span>Live CRM quotation · all calculations update instantly</span>
-        <div class="pages" id="nav"></div>
-      </div>
-      <div class="book">
-        <section class="page cover active"
-          style="position:relative; background-color:#fff; padding:0; overflow:hidden; height:297mm !important; min-height:297mm !important;">
-          <!-- Background Image with Gradient for Text Readability -->
-          <div style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:0;">
-            <% let bannerImg='residentialbanner.jpg' ; /* default to residential */ let pTypeForBanner=(lead.projecttype
-              || lead.projectType || '' ).toLowerCase(); if (pTypeForBanner.includes('commercial')) {
-              bannerImg='commercialbanner.png' ; } else if (pTypeForBanner.includes('industr')) {
-              bannerImg='Industrialbanner.jpeg' ; } %>
-              <img src="<%= basePath %>/pdfs/<%= bannerImg %>"
-                style="width:100%; height:100%; object-fit:cover; object-position: center;" />
-              <div
-                style="position:absolute; top:0; left:0; width:100%; height:65%; background:linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 80%);">
-              </div>
-          </div>
-
-          <!-- Bottom White Blob SVG -->
-          <svg style="position:absolute; bottom:-2px; left:0; width:100%; height:45%; z-index:2; display:block;"
-            preserveAspectRatio="none" viewBox="0 0 100 100">
-            <path d="M0,20 Q50,-10 100,30 L100,105 L0,105 Z" fill="#ffffff" />
-          </svg>
-
-          <!-- Bottom Purple Blob SVG -->
-          <svg style="position:absolute; bottom:-2px; left:0; width:100%; height:26%; z-index:3; display:block;"
-            preserveAspectRatio="none" viewBox="0 0 100 100">
-            <path d="M0,35 Q60,50 100,0 L100,105 L0,105 Z" fill="#822650" />
-          </svg>
-
-          <!-- Content Container -->
-          <div
-            style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:10; display:flex; flex-direction:column; padding:0;">
-            <!-- TOP SECTION -->
-            <div style="padding: 40px; color:#fff; width:70%; height:55%;">
-              <div class="logo" style="margin-bottom:10px; margin-left:-20px;"><img
-                  src="<%= (typeof logoBase64 !== 'undefined' && logoBase64) ? 'data:image/png;base64,' + logoBase64 : basePath + '/pdfs/sms.png' %>"
-                  alt="SMS ENTERPRISE" style="max-height: 100px;" /></div>
-              <div style="font-size:12px; opacity:0.9; line-height:1.4;">Powering a<br />Sustainable Tomorrow</div>
-
-              <div class="eyebrow"
-                style="margin-top:55px; color:#e19fb9; font-weight:700; font-size:12px; letter-spacing:0.1em;">
-                <%= (lead.projecttype || lead.projectType || 'COMMERCIAL' ).toUpperCase() %> OFFER
-              </div>
-              <% let targetWord='business' ; let pt=(lead.projecttype || lead.projectType) ? (lead.projecttype ||
-                lead.projectType).toLowerCase() : '' ; if (pt.includes('resident') || pt.includes('home'))
-                targetWord='home' ; else if (pt.includes('industr')) targetWord='industry' ; else if
-                (pt.includes('commercial')) targetWord='building' ; %>
-                <h1
-                  style="font-family:'Times New Roman', Times, serif; font-size:48px; line-height:1.15; margin:15px 0;">
-                  Power your<br />
-                  <%= targetWord %> with<br />clean, reliable<br />energy.
-                </h1>
-                <div class="coverSub" id="coverSize" style="margin-top:20px; font-size:16px; font-weight:500;">SME
-                  On-Grid
-                  Solar Systems</div>
+        %>
+        <div id="injectedData" style="display:none;">
+          <input id="size"
+            value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('size') || t.includes('capacity'); })?.values[0] || 0 %>" />
+          <input id="watt"
+            value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('module w') || t === 'wp'; })?.values[0] || 0 %>" />
+          <input id="rate"
+            value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('unit') || t.includes('rate'); })?.values[0] || 0 %>" />
+          <input id="gross" value="<%= pdfGross %>" />
+          <input id="subsidy" value="<%= pdfCentralSubsidy %>" />
+          <input id="gujaratSubsidy" value="<%= pdfGujaratSubsidy %>" />
+          <input id="loan"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
+          <input id="geda"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('geda'))?.values[0] || '' %>" />
+          <input id="meter"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('meter'))?.values[0] || '' %>" />
+          <input id="bill"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 0 %>" />
+          <input id="name" value="<%= lead.fullName || data.fullName || 'Customer' %>" />
+          <input id="proposal" value="<%= lead.leadrefrance || 'N/A' %>" />
+          <input id="exec" value="<%= lead.assignName || lead.assignedTo?.fullName || 'Sales Executive' %>" />
+          <input id="module" value="<%= quotation.solarModule %>" />
+          <input id="inverter" value="<%= quotation.inverter %>" />
+          <input id="structure"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('structure'))?.values[0] || '' %>" />
+          <input id="dcdb"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('dc protection'))?.values[0] || '' %>" />
+          <input id="acdb"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('ac protection'))?.values[0] || '' %>" />
+          <input id="cable"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('cable'))?.values[0] || '' %>" />
+          <input id="roof"
+            value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('roof'))?.values[0] || 'Flat Roof' %>" />
+        </div>
+        <div class="toolbar"><span>Live CRM quotation · all calculations update instantly</span>
+          <div class="pages" id="nav"></div>
+        </div>
+        <div class="book">
+          <section class="page cover active"
+            style="position:relative; background-color:#fff; padding:0; overflow:hidden; height:297mm !important; min-height:297mm !important;">
+            <!-- Background Image with Gradient for Text Readability -->
+            <div style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:0;">
+              <% let bannerImg='residentialbanner.jpg' ; /* default to residential */ let
+                pTypeForBanner=(lead.projecttype || lead.projectType || '' ).toLowerCase(); if
+                (pTypeForBanner.includes('commercial')) { bannerImg='commercialbanner.png' ; } else if
+                (pTypeForBanner.includes('industr')) { bannerImg='Industrialbanner.jpeg' ; } %>
+                <img src="<%= basePath %>/pdfs/<%= bannerImg %>"
+                  style="width:100%; height:100%; object-fit:cover; object-position: center;" />
+                <div
+                  style="position:absolute; top:0; left:0; width:100%; height:65%; background:linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 80%);">
+                </div>
             </div>
 
-            <!-- MIDDLE SECTION -->
+            <!-- Bottom White Blob SVG -->
+            <svg style="position:absolute; bottom:-2px; left:0; width:100%; height:45%; z-index:2; display:block;"
+              preserveAspectRatio="none" viewBox="0 0 100 100">
+              <path d="M0,20 Q50,-10 100,30 L100,105 L0,105 Z" fill="#ffffff" />
+            </svg>
+
+            <!-- Bottom Purple Blob SVG -->
+            <svg style="position:absolute; bottom:-2px; left:0; width:100%; height:26%; z-index:3; display:block;"
+              preserveAspectRatio="none" viewBox="0 0 100 100">
+              <path d="M0,35 Q60,50 100,0 L100,105 L0,105 Z" fill="#822650" />
+            </svg>
+
+            <!-- Content Container -->
             <div
-              style="padding: 10px 40px 0; position:relative; z-index:11; flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
-              <div class="kicker" style="color:#822650; font-weight:800; font-size:11px; margin-bottom:15px;">PREPARED
-                EXCLUSIVELY FOR</div>
-              <div style="display:flex; gap:25px; align-items:center;">
-                <div style="flex: 1; max-width: 380px; word-wrap: break-word;">
-                  <h2 data-name
-                    style="font-family:'Times New Roman', Times, serif; font-size:28px; margin:0; color:#1c1620; line-height:1.2; word-break: break-word;">
-                    <%= lead.fullName || data.fullName || "Customer" %>
-                  </h2>
-                  <p style="font-size:15px; font-weight:800; color:#1c1620; margin:8px 0 0 0;">
-                    <%= lead.contact || "" %>
-                  </p>
+              style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:10; display:flex; flex-direction:column; padding:0;">
+              <!-- TOP SECTION -->
+              <div style="padding: 40px; color:#fff; width:70%; height:55%;">
+                <div class="logo" style="margin-bottom:10px; margin-left:-20px;"><img
+                    src="<%= (typeof logoBase64 !== 'undefined' && logoBase64) ? 'data:image/png;base64,' + logoBase64 : basePath + '/pdfs/sms.png' %>"
+                    alt="SMS ENTERPRISE" style="max-height: 100px;" /></div>
+                <div style="font-size:12px; opacity:0.9; line-height:1.4;">Powering a<br />Sustainable Tomorrow</div>
+
+                <div class="eyebrow"
+                  style="margin-top:55px; color:#e19fb9; font-weight:700; font-size:12px; letter-spacing:0.1em;">
+                  <%= (lead.projecttype || lead.projectType || 'COMMERCIAL' ).toUpperCase() %> OFFER
                 </div>
+                <% let targetWord='business' ; let pt=(lead.projecttype || lead.projectType) ? (lead.projecttype ||
+                  lead.projectType).toLowerCase() : '' ; if (pt.includes('resident') || pt.includes('home'))
+                  targetWord='home' ; else if (pt.includes('industr')) targetWord='industry' ; else if
+                  (pt.includes('commercial')) targetWord='building' ; %>
+                  <h1
+                    style="font-family:'Times New Roman', Times, serif; font-size:48px; line-height:1.15; margin:15px 0;">
+                    Power your<br />
+                    <%= targetWord %> with<br />clean, reliable<br />energy.
+                  </h1>
+                  <div class="coverSub" id="coverSize" style="margin-top:20px; font-size:16px; font-weight:500;">SME
+                    On-Grid
+                    Solar Systems</div>
+              </div>
+
+              <!-- MIDDLE SECTION -->
+              <div
+                style="padding: 10px 40px 0; position:relative; z-index:11; flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
+                <div class="kicker" style="color:#822650; font-weight:800; font-size:11px; margin-bottom:15px;">PREPARED
+                  EXCLUSIVELY FOR</div>
+                <div style="display:flex; gap:25px; align-items:center;">
+                  <div style="flex: 1; max-width: 380px; word-wrap: break-word;">
+                    <h2 data-name
+                      style="font-family:'Times New Roman', Times, serif; font-size:28px; margin:0; color:#1c1620; line-height:1.2; word-break: break-word;">
+                      <%= lead.fullName || data.fullName || "Customer" %>
+                    </h2>
+                    <p style="font-size:15px; font-weight:800; color:#1c1620; margin:8px 0 0 0;">
+                      <%= lead.contact || "" %>
+                    </p>
+                  </div>
+                  <div
+                    style="border-left:2px solid #e8dfea; padding-left:25px; flex-shrink: 0; display:flex; flex-direction:column; gap:4px;">
+                    <div style="color:#766d7b; font-size:12px; font-weight:600;"><span id="today"></span></div>
+                    <div style="color:#766d7b; font-size:12px;">Prepared by <b data-exec style="color:#1c1620;">
+                        <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
+                      </b></div>
+                    <div style="color:#1c1620; font-size:13px; font-weight:800;">
+                      <%= lead.assignContact || "" %>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="lead"
+                  style="color:#5e4e68; font-size:14px; max-width:400px; margin-top:25px; line-height:1.6;">
+                  A premium, end-to-end clean-energy solution engineered for long-term savings.</p>
+
+
+              </div>
+
+              <!-- BOTTOM SECTION -->
+              <div
+                style="padding: 30px 40px; color:#fff; display:flex; justify-content:space-between; align-items:flex-end; position:relative; z-index:12;">
+                <div style="max-width:350px;">
+                  <div
+                    style="font-size:13px; font-weight:700; display:inline-block; padding-bottom:5px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.4);">
+                    Powering a Greener Tomorrow</div>
+                  <p style="font-size:12px; line-height:1.6; opacity:0.95; margin:0;">Our on-grid solar solutions help
+                    businesses reduce costs, enhance energy independence, and contribute to a sustainable future.</p>
+
+                  <div
+                    style="margin-top:15px; font-size:11px; font-weight:500; line-height:1.5; color:#f0f0f0; max-width: 300px;">
+                    328, SUN TRADE CENTRE, NEAR DGVCL OFFICE RAMNAGAR, RANDER, SURAT - 395005
+                  </div>
+                </div>
+
                 <div
-                  style="border-left:2px solid #e8dfea; padding-left:25px; flex-shrink: 0; display:flex; flex-direction:column; gap:4px;">
-                  <div style="color:#766d7b; font-size:12px; font-weight:600;"><span id="today"></span></div>
-                  <div style="color:#766d7b; font-size:12px;">Prepared by <b data-exec style="color:#1c1620;">
-                      <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
-                    </b></div>
-                  <div style="color:#1c1620; font-size:13px; font-weight:800;">
-                    <%= lead.assignContact || "" %>
+                  style="background:#fff; color:#822650; font-weight:800; font-size:15px; padding:15px 30px; border-radius:30px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); line-height:1.4; margin-bottom:10px;">
+                  Phone: <br />+91 7567067010
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="page">
+            <div class="kicker" style="margin-top: 30px;">01 · Company profile</div>
+            <h2>A solar partner built around certainty.</h2>
+            <p class="lead"
+              style="max-width:100%; margin-bottom:20px; line-height:1.8; text-align:justify; font-size:15px;">SMS
+              Enterprise is a leading provider of residential solar solutions, helping homeowners switch to clean,
+              reliable, and cost-effective energy. We offer complete turnkey services, including consultation,
+              customized
+              system design, professional installation, and dedicated after-sales support. Using premium-quality solar
+              components and skilled workmanship, we ensure maximum efficiency and long-term performance. Our mission is
+              to reduce electricity costs while promoting a sustainable and eco-friendly lifestyle. With a strong focus
+              on
+              quality, trust, and customer satisfaction, SMS Enterprise is your reliable partner for powering homes with
+              solar energy.</p>
+            <div class="kpis" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 25px;">
+              <div class="kpi purple"><small>Residential</small><b style="font-size:22px">2000+</b><span
+                  style="font-size:10px;color:var(--mut);">Installation</span></div>
+              <div class="kpi blue"><small>Commercial</small><b style="font-size:22px">500+</b><span
+                  style="font-size:10px;color:var(--mut);">Installation</span></div>
+              <div class="kpi green"><small>Industrial</small><b style="font-size:22px">500+</b><span
+                  style="font-size:10px;color:var(--mut);">Installation</span></div>
+            </div>
+            <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
+            <div class="kicker">02 · Why go solar</div>
+            <h2>A smarter bill. A lighter footprint.</h2>
+            <div class="kpis" style="grid-template-columns: 1fr 1fr; max-width: 500px;">
+              <div class="kpi green"><small>Monthly saving</small><b data-saving>₹5,400</b></div>
+              <div class="kpi"><small>Payback</small><b data-payback>3.8 yrs</b></div>
+            </div>
+            <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
+            <div class="kicker">03 · Proposed system</div>
+            <h2 style="font-size:22px; line-height:1.25; word-wrap:break-word; margin:4px 0 10px;">Designed for <span
+                data-name>
+                <%= lead.fullName || data.fullName || "Customer" %>
+              </span>.</h2>
+            <div class="twocol">
+              <div class="offer">
+                <div class="row"><span>System size</span><b data-size>5 KW</b></div>
+                <div class="row"><span>Solar module</span><b data-module>
+                    <%= quotation.solarModule || (quotation.rows && quotation.rows.find(r=>
+                      r.title.toLowerCase().includes('module'))?.values[0]) || "-" %>
+                  </b></div>
+                <div class="row"><span>Module quantity</span><b data-panels>10 × 550 W</b></div>
+                <div class="row"><span>Inverter</span><b data-inverter>
+                    <%= quotation.inverter || (quotation.rows && quotation.rows.find(r=>
+                      r.title.toLowerCase().includes('inverter'))?.values[0]) || "-" %>
+                  </b></div>
+                <div class="row"><span>Roof / area</span><b data-area>Flat · 500 sq ft</b></div>
+              </div>
+              <div class="panel">
+                <h3>Expected performance</h3>
+                <div class="kpis" style="grid-template-columns:1fr 1fr; margin-top:10px; margin-bottom:0;">
+                  <div class="kpi blue"><small>Daily units</small><b data-daily>22.5</b></div>
+                  <div class="kpi blue"><small>Monthly units</small><b data-monthly>675</b></div>
+                  <div class="kpi"><small>Annual units</small><b data-annual>8,213</b></div>
+                  <div class="kpi"><small>25-year generation</small><b data-gen25>174k</b></div>
+                </div>
+              </div>
+            </div>
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">02</span></div>
+          </section>
+          <section class="page" style="height: 297mm !important; display: flex; flex-direction: column;">
+            <div class="kicker" style="margin-top: 30px;">04 · Technical specifications</div>
+            <h2>Quality in every connection.</h2>
+
+            <div
+              style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0 60px 0;">
+              <div class="brand-category" style="margin-top: 30px;">
+                <h3
+                  style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                  Panels</h3>
+                <div class="brand-boxes"
+                  style="display:flex; flex-direction:column; gap:40px; margin-top:15px; align-items: center;">
+                  <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
+                    <img src="<%= basePath %>/pdfs/technical/adani.PNG" style="height: 55px; object-fit: contain;"
+                      alt="Adani" />
+                    <img src="<%= basePath %>/pdfs/technical/wareee.PNG" style="height: 55px; object-fit: contain;"
+                      alt="Waaree" />
+                    <img src="<%= basePath %>/pdfs/technical/pahal.PNG" style="height: 55px; object-fit: contain;"
+                      alt="Pahal" />
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
+                    <img src="<%= basePath %>/pdfs/technical/goldi.PNG" style="height: 55px; object-fit: contain;"
+                      alt="Goldi" />
+                    <img src="<%= basePath %>/pdfs/technical/rayzon.PNG" style="height: 55px; object-fit: contain;"
+                      alt="Rayzon" />
+                    <img src="<%= basePath %>/pdfs/technical/avaada.PNG" style="height: 55px; object-fit: contain;"
+                      alt="Avaada" />
                   </div>
                 </div>
               </div>
 
-              <p class="lead" style="color:#5e4e68; font-size:14px; max-width:400px; margin-top:25px; line-height:1.6;">
-                A premium, end-to-end clean-energy solution engineered for long-term savings.</p>
-
-
-            </div>
-
-            <!-- BOTTOM SECTION -->
-            <div
-              style="padding: 30px 40px; color:#fff; display:flex; justify-content:space-between; align-items:flex-end; position:relative; z-index:12;">
-              <div style="max-width:350px;">
-                <div
-                  style="font-size:13px; font-weight:700; display:inline-block; padding-bottom:5px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.4);">
-                  Powering a Greener Tomorrow</div>
-                <p style="font-size:12px; line-height:1.6; opacity:0.95; margin:0;">Our on-grid solar solutions help
-                  businesses reduce costs, enhance energy independence, and contribute to a sustainable future.</p>
-
-                <div
-                  style="margin-top:15px; font-size:11px; font-weight:500; line-height:1.5; color:#f0f0f0; max-width: 300px;">
-                  328, SUN TRADE CENTRE, NEAR DGVCL OFFICE RAMNAGAR, RANDER, SURAT - 395005
+              <div class="brand-category" style="margin-top: 30px;">
+                <h3
+                  style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                  Inverter</h3>
+                <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                  <img src="<%= basePath %>/pdfs/technical/solaryan.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Solaryaan" />
+                  <img src="<%= basePath %>/pdfs/technical/velox.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Velox" />
+                  <img src="<%= basePath %>/pdfs/technical/vsole.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Vsole" />
                 </div>
               </div>
 
-              <div
-                style="background:#fff; color:#822650; font-weight:800; font-size:15px; padding:15px 30px; border-radius:30px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); line-height:1.4; margin-bottom:10px;">
-                Phone: <br />+91 8200802153
-              </div>
-            </div>
-          </div>
-        </section>
-        <section class="page">
-          <div class="kicker" style="margin-top: 30px;">01 · Company profile</div>
-          <h2>A solar partner built around certainty.</h2>
-          <p class="lead"
-            style="max-width:100%; margin-bottom:20px; line-height:1.8; text-align:justify; font-size:15px;">SMS
-            Enterprise is a leading provider of residential solar solutions, helping homeowners switch to clean,
-            reliable, and cost-effective energy. We offer complete turnkey services, including consultation, customized
-            system design, professional installation, and dedicated after-sales support. Using premium-quality solar
-            components and skilled workmanship, we ensure maximum efficiency and long-term performance. Our mission is
-            to reduce electricity costs while promoting a sustainable and eco-friendly lifestyle. With a strong focus on
-            quality, trust, and customer satisfaction, SMS Enterprise is your reliable partner for powering homes with
-            solar energy.</p>
-          <div class="kpis" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 25px;">
-            <div class="kpi purple"><small>Residential</small><b style="font-size:22px">2000+</b><span
-                style="font-size:10px;color:var(--mut);">Installation</span></div>
-            <div class="kpi blue"><small>Commercial</small><b style="font-size:22px">500+</b><span
-                style="font-size:10px;color:var(--mut);">Installation</span></div>
-            <div class="kpi green"><small>Industrial</small><b style="font-size:22px">500+</b><span
-                style="font-size:10px;color:var(--mut);">Installation</span></div>
-          </div>
-          <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
-          <div class="kicker">02 · Why go solar</div>
-          <h2>A smarter bill. A lighter footprint.</h2>
-          <div class="kpis" style="grid-template-columns: 1fr 1fr; max-width: 500px;">
-            <div class="kpi green"><small>Monthly saving</small><b data-saving>₹5,400</b></div>
-            <div class="kpi"><small>Payback</small><b data-payback>3.8 yrs</b></div>
-          </div>
-          <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
-          <div class="kicker">03 · Proposed system</div>
-          <h2 style="font-size:22px; line-height:1.25; word-wrap:break-word; margin:4px 0 10px;">Designed for <span
-              data-name>
-              <%= lead.fullName || data.fullName || "Customer" %>
-            </span>.</h2>
-          <div class="twocol">
-            <div class="offer">
-              <div class="row"><span>System size</span><b data-size>5 KW</b></div>
-              <div class="row"><span>Solar module</span><b data-module>
-                  <%= quotation.solarModule || (quotation.rows && quotation.rows.find(r=>
-                    r.title.toLowerCase().includes('module'))?.values[0]) || "-" %>
-                </b></div>
-              <div class="row"><span>Module quantity</span><b data-panels>10 × 550 W</b></div>
-              <div class="row"><span>Inverter</span><b data-inverter>
-                  <%= quotation.inverter || (quotation.rows && quotation.rows.find(r=>
-                    r.title.toLowerCase().includes('inverter'))?.values[0]) || "-" %>
-                </b></div>
-              <div class="row"><span>Roof / area</span><b data-area>Flat · 500 sq ft</b></div>
-            </div>
-            <div class="panel">
-              <h3>Expected performance</h3>
-              <div class="kpis" style="grid-template-columns:1fr 1fr; margin-top:10px; margin-bottom:0;">
-                <div class="kpi blue"><small>Daily units</small><b data-daily>22.5</b></div>
-                <div class="kpi blue"><small>Monthly units</small><b data-monthly>675</b></div>
-                <div class="kpi"><small>Annual units</small><b data-annual>8,213</b></div>
-                <div class="kpi"><small>25-year generation</small><b data-gen25>174k</b></div>
-              </div>
-            </div>
-          </div>
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">02</span></div>
-        </section>
-        <section class="page" style="height: 297mm !important; display: flex; flex-direction: column;">
-          <div class="kicker" style="margin-top: 30px;">04 · Technical specifications</div>
-          <h2>Quality in every connection.</h2>
-
-          <div
-            style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0 60px 0;">
-            <div class="brand-category" style="margin-top: 30px;">
-              <h3
-                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
-                Panels</h3>
-              <div class="brand-boxes"
-                style="display:flex; flex-direction:column; gap:40px; margin-top:15px; align-items: center;">
-                <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
-                  <img src="<%= basePath %>/pdfs/technical/adani.PNG" style="height: 55px; object-fit: contain;"
-                    alt="Adani" />
-                  <img src="<%= basePath %>/pdfs/technical/wareee.PNG" style="height: 55px; object-fit: contain;"
-                    alt="Waaree" />
-                  <img src="<%= basePath %>/pdfs/technical/pahal.PNG" style="height: 55px; object-fit: contain;"
-                    alt="Pahal" />
+              <div class="brand-category" style="margin-top: 30px;">
+                <h3
+                  style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                  Cables</h3>
+                <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                  <img src="<%= basePath %>/pdfs/technical/polycab.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Polycab" />
+                  <img src="<%= basePath %>/pdfs/technical/rr.PNG" style="height: 55px; object-fit: contain;"
+                    alt="RR Kabel" />
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
-                  <img src="<%= basePath %>/pdfs/technical/goldi.PNG" style="height: 55px; object-fit: contain;"
-                    alt="Goldi" />
-                  <img src="<%= basePath %>/pdfs/technical/rayzon.PNG" style="height: 55px; object-fit: contain;"
-                    alt="Rayzon" />
-                  <img src="<%= basePath %>/pdfs/technical/avaada.PNG" style="height: 55px; object-fit: contain;"
-                    alt="Avaada" />
+              </div>
+
+              <div class="brand-category" style="margin-top: 30px;">
+                <h3
+                  style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                  Structure</h3>
+                <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                  <img src="<%= basePath %>/pdfs/technical/hindustan.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Hindustan" />
+                  <img src="<%= basePath %>/pdfs/technical/aplapollo.PNG" style="height: 55px; object-fit: contain;"
+                    alt="APL Apollo" />
+                </div>
+              </div>
+
+              <div class="brand-category" style="margin-top: 30px;">
+                <h3
+                  style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                  Earthing & Protection</h3>
+                <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                  <img src="<%= basePath %>/pdfs/technical/elink.png" style="height: 55px; object-fit: contain;"
+                    alt="E-Link" />
                 </div>
               </div>
             </div>
 
-            <div class="brand-category" style="margin-top: 30px;">
-              <h3
-                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
-                Inverter</h3>
-              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/solaryan.PNG" style="height: 55px; object-fit: contain;"
-                  alt="Solaryaan" />
-                <img src="<%= basePath %>/pdfs/technical/velox.PNG" style="height: 55px; object-fit: contain;"
-                  alt="Velox" />
-                <img src="<%= basePath %>/pdfs/technical/vsole.PNG" style="height: 55px; object-fit: contain;"
-                  alt="Vsole" />
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">03</span></div>
+          </section>
+          <section class="page" style="display:flex; flex-direction:column;">
+            <div class="kicker" style="margin-top: 30px;">05 · Commercial offer</div>
+            <h2>Transparent investment. Measurable return.</h2>
+            <div class="twocol" style="margin-top:15px;">
+              <div class="offer">
+                <div class="row"><span>Gross system amount</span><b data-gross>
+                    <%= '₹' + Math.round(pdfGross).toLocaleString('en-IN') %>
+                  </b></div>
+                <div class="row"><span>Central Gov subsidy</span><b data-subsidy>
+                    <%= '₹' + Math.round(pdfCentralSubsidy).toLocaleString('en-IN') %>
+                  </b></div>
+                <div class="row" id="row-gujarat-subsidy"><span>Gujarat Gov subsidy</span><b data-gujarat-subsidy>
+                    <%= '₹' + Math.round(pdfGujaratSubsidy).toLocaleString('en-IN') %>
+                  </b></div>
+                <div class="row"><span>Customer amount</span><b data-custamt>
+                    <%= '₹' + Math.round(pdfCustomerAmt).toLocaleString('en-IN') %>
+                  </b></div>
+                <div class="row"><span>Annual savings</span><b data-annualsave>₹64,800</b></div>
+                <div class="row"><span>25-year savings</span><b data-save25>₹16.2L</b></div>
+                <div class="row" id="row-geda" style="display:none;"><span>GEDA Registration</span><b data-geda>₹0</b>
+                </div>
+                <div class="row" id="row-meter" style="display:none;"><span>Meter Charge</span><b data-meter>₹0</b>
+                </div>
+              </div>
+              <div class="pay"><small>Customer payable</small><b data-payable>₹3,25,000</b>
+                <p>ROI <span data-roi>26.2%</span> · Expected payback <span data-payback>3.8 yrs</span></p>
               </div>
             </div>
-
-            <div class="brand-category" style="margin-top: 30px;">
-              <h3
-                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
-                Cables</h3>
-              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/polycab.PNG" style="height: 55px; object-fit: contain;"
-                  alt="Polycab" />
-                <img src="<%= basePath %>/pdfs/technical/rr.PNG" style="height: 55px; object-fit: contain;"
-                  alt="RR Kabel" />
+            <div class="panel" style="margin-top:25px; padding:15px 25px;">
+              <h3>25-year savings outlook</h3>
+              <div class="bars">
+                <div id="bar1" class="bar" data-l="Year 1" data-v="₹64.8K" style="height:26%"></div>
+                <div id="bar5" class="bar" data-l="Year 5" data-v="₹3.2L" style="height:43%"></div>
+                <div id="bar10" class="bar" data-l="Year 10" data-v="₹6.5L" style="height:65%"></div>
+                <div id="bar25" class="bar" data-l="Year 25" data-v="₹16.2L" style="height:100%"></div>
               </div>
             </div>
-
-            <div class="brand-category" style="margin-top: 30px;">
-              <h3
-                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
-                Structure</h3>
-              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/hindustan.PNG" style="height: 55px; object-fit: contain;"
-                  alt="Hindustan" />
-                <img src="<%= basePath %>/pdfs/technical/aplapollo.PNG" style="height: 55px; object-fit: contain;"
-                  alt="APL Apollo" />
+            <div class="offer" style="margin-top:25px;">
+              <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Account name</span><b
+                  style="font-size:14px">SMS ENTERPRISE</b></div>
+              <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Bank</span><b
+                  style="font-size:14px">ICICI BANK</b></div>
+              <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Branch</span><b
+                  style="font-size:14px">Surat Rander</b></div>
+              <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Account number</span><b
+                  style="font-size:14px">138605501394</b></div>
+              <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">IFSC</span><b
+                  style="font-size:14px">ICIC0001386</b></div>
+              <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Website</span><b
+                  style="font-size:14px">www.sms-enterprise.com</b></div>
+            </div>
+            <div style="display:flex; justify-content:center; margin-top:25px;">
+              <div class="panel"
+                style="display:flex;align-items:center;gap:20px;padding:12px;width:max-content;padding-right:40px;">
+                <div>
+                  <div class="qr" style="width:90px;height:90px;border:none;"><img
+                      src="data:image/png;base64,<%= qrBase64 %>" alt="QR Code"
+                      style="max-width:100%;max-height:100%;border-radius:6px;" /></div>
+                </div>
+                <div>
+                  <h3 style="font-size:15px; margin:0 0 5px 0;">Payment QR</h3>
+                  <p style="font-size:12px;color:var(--ink);font-weight:600;margin:0;">Scan to make secure payment.</p>
+                </div>
               </div>
             </div>
-
-            <div class="brand-category" style="margin-top: 30px;">
-              <h3
-                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
-                Earthing & Protection</h3>
-              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/elink.png" style="height: 55px; object-fit: contain;"
-                  alt="E-Link" />
+            <div style="flex:1;"></div>
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">04</span></div>
+          </section>
+          <section class="page">
+            <div class="kicker" style="margin-top: 30px;">06 · Installation process</div>
+            <h2>Work SOP.</h2>
+            <div class="steps" style="max-width: 100%; margin: 25px 0; gap: 20px; justify-content: flex-start;">
+              <div class="step">
+                <div class="num">1</div>quotation / PI
+              </div>
+              <div class="step">
+                <div class="num">2</div>Order confirmation
+              </div>
+              <div class="step">
+                <div class="num">3</div>Advance payment
+              </div>
+              <div class="step">
+                <div class="num">4</div>Registration
+              </div>
+              <div class="step">
+                <div class="num">5</div>GEB approval
+              </div>
+              <div class="step">
+                <div class="num">6</div>Material delivery
+              </div>
+              <div class="step">
+                <div class="num">7</div>Payment
+              </div>
+              <div class="step">
+                <div class="num">8</div>Installation
+              </div>
+              <div class="step">
+                <div class="num">9</div>Meter
+              </div>
+              <div class="step">
+                <div class="num">10</div>Subsidy
               </div>
             </div>
-          </div>
-
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">03</span></div>
-        </section>
-        <section class="page" style="display:flex; flex-direction:column;">
-          <div class="kicker" style="margin-top: 30px;">05 · Commercial offer</div>
-          <h2>Transparent investment. Measurable return.</h2>
-          <div class="twocol" style="margin-top:15px;">
-            <div class="offer">
-              <div class="row"><span>Gross system amount</span><b data-gross><%= '₹' + Math.round(pdfGross).toLocaleString('en-IN') %></b></div>
-              <div class="row"><span>Central Gov subsidy</span><b data-subsidy><%= '₹' + Math.round(pdfCentralSubsidy).toLocaleString('en-IN') %></b></div>
-              <div class="row" id="row-gujarat-subsidy"><span>Gujarat Gov subsidy</span><b data-gujarat-subsidy><%= '₹' + Math.round(pdfGujaratSubsidy).toLocaleString('en-IN') %></b></div>
-              <div class="row"><span>Customer amount</span><b data-custamt><%= '₹' + Math.round(pdfCustomerAmt).toLocaleString('en-IN') %></b></div>
-              <div class="row"><span>Annual savings</span><b data-annualsave>₹64,800</b></div>
-              <div class="row"><span>25-year savings</span><b data-save25>₹16.2L</b></div>
-              <div class="row" id="row-geda" style="display:none;"><span>GEDA Registration</span><b data-geda>₹0</b>
+            <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
+            <div class="kicker">07 · Warranty & care</div>
+            <h2>Long-term confidence, built in.</h2>
+            <div class="cards" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px;">
+              <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
+                <div class="icon">30</div><b>Module performance</b>
+                <p>30-year linear power-performance coverage.</p>
               </div>
-              <div class="row" id="row-meter" style="display:none;"><span>Meter Charge</span><b data-meter>₹0</b></div>
-            </div>
-            <div class="pay"><small>Customer payable</small><b data-payable>₹3,25,000</b>
-              <p>ROI <span data-roi>26.2%</span> · Expected payback <span data-payback>3.8 yrs</span></p>
-            </div>
-          </div>
-          <div class="panel" style="margin-top:25px; padding:15px 25px;">
-            <h3>25-year savings outlook</h3>
-            <div class="bars">
-              <div id="bar1" class="bar" data-l="Year 1" data-v="₹64.8K" style="height:26%"></div>
-              <div id="bar5" class="bar" data-l="Year 5" data-v="₹3.2L" style="height:43%"></div>
-              <div id="bar10" class="bar" data-l="Year 10" data-v="₹6.5L" style="height:65%"></div>
-              <div id="bar25" class="bar" data-l="Year 25" data-v="₹16.2L" style="height:100%"></div>
-            </div>
-          </div>
-          <div class="offer" style="margin-top:25px;">
-            <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Account name</span><b
-                style="font-size:14px">SMS ENTERPRISE</b></div>
-            <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Bank</span><b
-                style="font-size:14px">ICICI BANK</b></div>
-            <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Branch</span><b
-                style="font-size:14px">Surat Rander</b></div>
-            <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Account number</span><b
-                style="font-size:14px">138605501394</b></div>
-            <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">IFSC</span><b
-                style="font-size:14px">ICIC0001386</b></div>
-            <div class="row"><span style="color:var(--ink); font-weight:600; font-size:13px;">Website</span><b
-                style="font-size:14px">www.sms-enterprise.com</b></div>
-          </div>
-          <div style="display:flex; justify-content:center; margin-top:25px;">
-            <div class="panel"
-              style="display:flex;align-items:center;gap:20px;padding:12px;width:max-content;padding-right:40px;">
-              <div>
-                <div class="qr" style="width:90px;height:90px;border:none;"><img
-                    src="data:image/png;base64,<%= qrBase64 %>" alt="QR Code"
-                    style="max-width:100%;max-height:100%;border-radius:6px;" /></div>
+              <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
+                <div class="icon">10</div><b>Inverter</b>
+                <p>10-year inverter warranty subject to product terms.</p>
               </div>
-              <div>
-                <h3 style="font-size:15px; margin:0 0 5px 0;">Payment QR</h3>
-                <p style="font-size:12px;color:var(--ink);font-weight:600;margin:0;">Scan to make secure payment.</p>
+              <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
+                <div class="icon">5</div><b>Structure</b>
+                <p>5-year structural assurance for the mounting system.</p>
+              </div>
+              <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
+                <div class="icon">5</div><b>Installation</b>
+                <p>5-year workmanship support.</p>
+              </div>
+              <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
+                <div class="icon">◉</div><b>Monitoring</b>
+                <p>Generation monitoring for visibility and control.</p>
               </div>
             </div>
-          </div>
-          <div style="flex:1;"></div>
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">04</span></div>
-        </section>
-        <section class="page">
-          <div class="kicker" style="margin-top: 30px;">06 · Installation process</div>
-          <h2>Work SOP.</h2>
-          <div class="steps" style="max-width: 100%; margin: 25px 0; gap: 20px; justify-content: flex-start;">
-            <div class="step">
-              <div class="num">1</div>quotation / PI
+            <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
+            <div class="kicker">08 · Scope of work</div>
+            <h2>Clear inclusions. Clear expectations.</h2>
+            <div class="twocol">
+              <div class="panel" style="padding:15px;">
+                <h3>Included</h3>
+                <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Survey, design &
+                    engineering</span></div>
+                <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Material, installation &
+                    testing</span></div>
+                <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Net meter documentation
+                    support</span></div>
+                <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Customer handover &
+                    training</span></div>
+              </div>
+              <div class="panel" style="padding:15px;">
+                <h3>Not included</h3>
+                <div class="row" style="padding:5px 0;"><span>—</span><span>Civil work outside agreed scope</span></div>
+                <div class="row" style="padding:5px 0;"><span>—</span><span>Roof repair / waterproofing</span></div>
+                <div class="row" style="padding:5px 0;"><span>—</span><span>Internet connectivity charges</span></div>
+              </div>
             </div>
-            <div class="step">
-              <div class="num">2</div>Order confirmation
-            </div>
-            <div class="step">
-              <div class="num">3</div>Advance payment
-            </div>
-            <div class="step">
-              <div class="num">4</div>Registration
-            </div>
-            <div class="step">
-              <div class="num">5</div>GEB approval
-            </div>
-            <div class="step">
-              <div class="num">6</div>Material delivery
-            </div>
-            <div class="step">
-              <div class="num">7</div>Payment
-            </div>
-            <div class="step">
-              <div class="num">8</div>Installation
-            </div>
-            <div class="step">
-              <div class="num">9</div>Meter
-            </div>
-            <div class="step">
-              <div class="num">10</div>Subsidy
-            </div>
-          </div>
-          <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
-          <div class="kicker">07 · Warranty & care</div>
-          <h2>Long-term confidence, built in.</h2>
-          <div class="cards" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px;">
-            <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
-              <div class="icon">30</div><b>Module performance</b>
-              <p>30-year linear power-performance coverage.</p>
-            </div>
-            <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
-              <div class="icon">10</div><b>Inverter</b>
-              <p>10-year inverter warranty subject to product terms.</p>
-            </div>
-            <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
-              <div class="icon">5</div><b>Structure</b>
-              <p>5-year structural assurance for the mounting system.</p>
-            </div>
-            <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
-              <div class="icon">5</div><b>Installation</b>
-              <p>5-year workmanship support.</p>
-            </div>
-            <div class="card" style="width:calc(50% - 6px); box-sizing:border-box;">
-              <div class="icon">◉</div><b>Monitoring</b>
-              <p>Generation monitoring for visibility and control.</p>
-            </div>
-          </div>
-          <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
-          <div class="kicker">08 · Scope of work</div>
-          <h2>Clear inclusions. Clear expectations.</h2>
-          <div class="twocol">
-            <div class="panel" style="padding:15px;">
-              <h3>Included</h3>
-              <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Survey, design &
-                  engineering</span></div>
-              <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Material, installation &
-                  testing</span></div>
-              <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Net meter documentation
-                  support</span></div>
-              <div class="row" style="padding:5px 0;"><span class="check">✓</span><span>Customer handover &
-                  training</span></div>
-            </div>
-            <div class="panel" style="padding:15px;">
-              <h3>Not included</h3>
-              <div class="row" style="padding:5px 0;"><span>—</span><span>Civil work outside agreed scope</span></div>
-              <div class="row" style="padding:5px 0;"><span>—</span><span>Roof repair / waterproofing</span></div>
-              <div class="row" style="padding:5px 0;"><span>—</span><span>Internet connectivity charges</span></div>
-            </div>
-          </div>
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">05</span></div>
-        </section>
-        <section class="page">
-          <div class="kicker" style="margin-top: 30px;">09 · Detailed specifications</div>
-          <h2>Bill of Materials (1/2)</h2>
-          <% 
-            let getRowVal = (titles) => {
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">05</span></div>
+          </section>
+          <section class="page">
+            <div class="kicker" style="margin-top: 30px;">09 · Detailed specifications</div>
+            <h2>Bill of Materials (1/2)</h2>
+            <% let getRowVal=(titles)=> {
               if (!quotation || !quotation.rows) return '';
               if (!Array.isArray(titles)) titles = [titles];
               for (let t of titles) {
-                let r = quotation.rows.find(row => row && row.title && row.title.toLowerCase().trim() === t.toLowerCase().trim());
-                if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
+              let r = quotation.rows.find(row => row && row.title && row.title.toLowerCase().trim() ===
+              t.toLowerCase().trim());
+              if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
               }
               for (let t of titles) {
-                let r = quotation.rows.find(row => row && row.title && row.title.toLowerCase().includes(t.toLowerCase().trim()));
-                if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
+              let r = quotation.rows.find(row => row && row.title &&
+              row.title.toLowerCase().includes(t.toLowerCase().trim()));
+              if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
               }
               return '';
-            };
+              };
 
-            const cableTags = [`solar cable product`, `solar cable`, `cable`];
-            let bomModule = quotation.solarModule || getRowVal([`solar module product`, `solar module`, `module`]) || `Adani / Goldi / Waaree / Rayzon / Pahal`;
-            let bomInverter = quotation.inverter || getRowVal([`inverter product`, `inverter`]) || `Solaryaan / Velox`;
-            
-            let dcProt = getRowVal([`dc protection`, `dcdb`]);
-            let acProt = getRowVal([`ac protection`, `acdb`]);
-            let acdcArray = [];
-            if (acProt) acdcArray.push(acProt);
-            if (dcProt && dcProt !== acProt) acdcArray.push(dcProt);
-            let bomAcdcDcdb = acdcArray.length > 0 ? acdcArray.join(' / ') : `Simens`;
+              const cableTags = [`solar cable product`, `solar cable`, `cable`];
+              let bomModule = quotation.solarModule || getRowVal([`solar module product`, `solar module`, `module`]) ||
+              `Adani / Goldi / Waaree / Rayzon / Pahal`;
+              let bomInverter = quotation.inverter || getRowVal([`inverter product`, `inverter`]) || `Solaryaan /
+              Velox`;
 
-            let bomAcCable = getRowVal([`ac cable`, `ac cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
-            let bomDcCable = getRowVal([`dc cable`, `dc cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
-            let bomEarthingCable = getRowVal([`earthing cable`, `earthing cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
-            let bomLaCable = getRowVal([`la cable`, `la cable product`]) || `Polycab 16SQMM (AL)`;
-            let bomStructure = getRowVal([`structure product`, `structure`]) || `Hindustan 60 x 40 2 mm ( 80 x 40 x 2mm if required )`;
-          %>
+              let dcProt = getRowVal([`dc protection`, `dcdb`]);
+              let acProt = getRowVal([`ac protection`, `acdb`]);
+              let acdcArray = [];
+              if (acProt) acdcArray.push(acProt);
+              if (dcProt && dcProt !== acProt) acdcArray.push(dcProt);
+              let bomAcdcDcdb = acdcArray.length > 0 ? acdcArray.join(' / ') : `Simens`;
+
+              let bomAcCable = getRowVal([`ac cable`, `ac cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
+              let bomDcCable = getRowVal([`dc cable`, `dc cable product`]) || getRowVal(cableTags) || `Polycab 4 SQMM`;
+              let bomEarthingCable = getRowVal([`earthing cable`, `earthing cable product`]) || getRowVal(cableTags) ||
+              `Polycab 4 SQMM`;
+              let bomLaCable = getRowVal([`la cable`, `la cable product`]) || `Polycab 16SQMM (AL)`;
+              let bomStructure = getRowVal([`structure product`, `structure`]) || `Hindustan 60 x 40 2 mm ( 80 x 40 x
+              2mm if required )`;
+              %>
+              <table class="spec-table">
+                <tbody>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_SOLAR PANEL.jpg"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">SOLAR MODULES</td>
+                    <td class="desc-col"><b>
+                        <%= bomModule %>
+                      </b><br>with 30 years output warranty,
+                      IP67 rated junction box protection.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/materials/SOLAR INVERTER.png"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">INVERTER</td>
+                    <td class="desc-col"><b>
+                        <%= bomInverter %>
+                      </b><br>with 10 year warranty, Wi-Fi / GPRS monitoring, IEC
+                      62109-1/2, IEC 61727, IEC 61683, MNRE approved.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_ACDB DCDB.jpeg"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">ACDB / DCDB</td>
+                    <td class="desc-col"><b>
+                        <%= bomAcdcDcdb %>
+                      </b> MCB and SPD, IP65 / IP66, powder coated CRCA steel or polycarbonate,
+                      UV stabilized.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_AC CABLE.jpeg"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">AC CABLE</td>
+                    <td class="desc-col"><b>
+                        <%= bomAcCable %>
+                      </b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                      60228), temperature rating -10°C to +70°C.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_DC CABLE.jpg"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">DC CABLE</td>
+                    <td class="desc-col"><b>
+                        <%= bomDcCable %>
+                      </b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                      60228), temperature rating -40°C to +120°C.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/materials/EARTHING CABLE.jpg"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">EARTHING CABLE</td>
+                    <td class="desc-col"><b>
+                        <%= bomEarthingCable %>
+                      </b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
+                      for flexibility.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/materials/LA CABLE.png"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">LA CABLE</td>
+                    <td class="desc-col"><b>
+                        <%= bomLaCable %>
+                      </b><br>XLPE insulated, PVC sheathed.</td>
+                  </tr>
+                  <tr>
+                    <td class="img-col"><img src="<%= basePath %>/pdfs/materials/PVC PIPE.jpg"
+                        style="width:75px; height:75px; object-fit:contain;" /></td>
+                    <td class="title-col">PVC CONDUIT PIPE</td>
+                    <td class="desc-col"><b>Domia 20MM</b> (ELBOW, COUPLER, BEND, TEE, SADDLE)</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">06</span></div>
+          </section>
+          <section class="page">
+            <div class="kicker" style="margin-top: 30px;">10 · Detailed specifications</div>
+            <h2>Bill of Materials (2/2)</h2>
             <table class="spec-table">
               <tbody>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_SOLAR PANEL.jpg"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/CABLE TIE.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">SOLAR MODULES</td>
-                  <td class="desc-col"><b>
-                      <%= bomModule %>
-                    </b><br>with 30 years output warranty,
-                    IP67 rated junction box protection.</td>
+                  <td class="title-col">CABLE TIE</td>
+                  <td class="desc-col"><b>SS ( Stainless Steel )</b><br>Grade 304 / 316, ball locking mechanism
+                    (self-locking), non-flammable</td>
                 </tr>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/SOLAR INVERTER.png"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/STRUCTURE.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">INVERTER</td>
+                  <td class="title-col">STRUCTURE PIPE</td>
                   <td class="desc-col"><b>
-                      <%= bomInverter %>
-                    </b><br>with 10 year warranty, Wi-Fi / GPRS monitoring, IEC
-                    62109-1/2, IEC 61727, IEC 61683, MNRE approved.</td>
+                      <%= bomStructure %>
+                    </b><br>40x40mm, 80x40mm,
+                    80x40mm (2.0 mm thickness) IS 1161/ IS 4923 / ASTM A500 / IS 2062, ≥15 years outdoor life</td>
                 </tr>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_ACDB DCDB.jpeg"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/J BOULT.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">ACDB / DCDB</td>
-                  <td class="desc-col"><b>
-                      <%= bomAcdcDcdb %>
-                    </b> MCB and SPD, IP65 / IP66, powder coated CRCA steel or polycarbonate,
-                    UV stabilized.</td>
+                  <td class="title-col">MODULES MOUNTING CLAMP & BOLT</td>
+                  <td class="desc-col"><b>J Bolt</b> (A2-70 / SS 304), spring washer, nut or 30mm / 40mm aluminium clamp
+                    (Al 6063-T5 or T6 anodized)</td>
                 </tr>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_AC CABLE.jpeg"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/Earthing-Kit.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">AC CABLE</td>
-                  <td class="desc-col"><b>
-                      <%= bomAcCable %>
-                    </b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
-                    60228), temperature rating -10°C to +70°C.</td>
+                  <td class="title-col">EARTHING KIT & LIGHTNING ARRESTER</td>
+                  <td class="desc-col"><b>14mm 1 mtr 100 micron Cu coating</b><br>coating thickness ≥100 microns, IS
+                    3043
+                    / IEEE 80 / IEC 62561-2</td>
                 </tr>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_DC CABLE.jpg"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/solar-mc4-connector.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">DC CABLE</td>
-                  <td class="desc-col"><b>
-                      <%= bomDcCable %>
-                    </b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
-                    60228), temperature rating -40°C to +120°C.</td>
+                  <td class="title-col">MC4 CONNECTOR</td>
+                  <td class="desc-col">1500V DC rated voltage, IP67 / IP68 (mated), dust & Waterproof, -40°C to +85°C
+                    ambient temperature, EMPV4N (male + female) with crimps</td>
                 </tr>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/EARTHING CABLE.jpg"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/BASE PLATE.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">EARTHING CABLE</td>
-                  <td class="desc-col"><b>
-                      <%= bomEarthingCable %>
-                    </b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
-                    for flexibility.</td>
+                  <td class="title-col">MOUNTING BASE PLATE & ANCHOR FASTENER</td>
+                  <td class="desc-col">GI base plate bolt holes 2 or 4 nos (Anchor bolts – usually 10–16mm), used in
+                    solar
+                    mounting structures with life >12 feet</td>
                 </tr>
                 <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/LA CABLE.png"
+                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/COATING SPRAY.jpg"
                       style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">LA CABLE</td>
-                  <td class="desc-col"><b>
-                      <%= bomLaCable %>
-                    </b><br>XLPE insulated, PVC sheathed.</td>
-                </tr>
-                <tr>
-                  <td class="img-col"><img src="<%= basePath %>/pdfs/materials/PVC PIPE.jpg"
-                      style="width:75px; height:75px; object-fit:contain;" /></td>
-                  <td class="title-col">PVC CONDUIT PIPE</td>
-                  <td class="desc-col"><b>Domia 20MM</b> (ELBOW, COUPLER, BEND, TEE, SADDLE)</td>
+                  <td class="title-col">POST-WELD COATING</td>
+                  <td class="desc-col">Zinc spray or silver colour used for touch-up or corrosion protection of HDGI,
+                    welds, and solar structure components</td>
                 </tr>
               </tbody>
             </table>
-            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">06</span></div>
-        </section>
-        <section class="page">
-          <div class="kicker" style="margin-top: 30px;">10 · Detailed specifications</div>
-          <h2>Bill of Materials (2/2)</h2>
-          <table class="spec-table">
-            <tbody>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/CABLE TIE.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">CABLE TIE</td>
-                <td class="desc-col"><b>SS ( Stainless Steel )</b><br>Grade 304 / 316, ball locking mechanism
-                  (self-locking), non-flammable</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/STRUCTURE.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">STRUCTURE PIPE</td>
-                <td class="desc-col"><b>
-                    <%= bomStructure %>
-                  </b><br>40x40mm, 80x40mm,
-                  80x40mm (2.0 mm thickness) IS 1161/ IS 4923 / ASTM A500 / IS 2062, ≥15 years outdoor life</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/J BOULT.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">MODULES MOUNTING CLAMP & BOLT</td>
-                <td class="desc-col"><b>J Bolt</b> (A2-70 / SS 304), spring washer, nut or 30mm / 40mm aluminium clamp
-                  (Al 6063-T5 or T6 anodized)</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/Earthing-Kit.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">EARTHING KIT & LIGHTNING ARRESTER</td>
-                <td class="desc-col"><b>14mm 1 mtr 100 micron Cu coating</b><br>coating thickness ≥100 microns, IS 3043
-                  / IEEE 80 / IEC 62561-2</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/solar-mc4-connector.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">MC4 CONNECTOR</td>
-                <td class="desc-col">1500V DC rated voltage, IP67 / IP68 (mated), dust & Waterproof, -40°C to +85°C
-                  ambient temperature, EMPV4N (male + female) with crimps</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/BASE PLATE.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">MOUNTING BASE PLATE & ANCHOR FASTENER</td>
-                <td class="desc-col">GI base plate bolt holes 2 or 4 nos (Anchor bolts – usually 10–16mm), used in solar
-                  mounting structures with life >12 feet</td>
-              </tr>
-              <tr>
-                <td class="img-col"><img src="<%= basePath %>/pdfs/materials/COATING SPRAY.jpg"
-                    style="width:75px; height:75px; object-fit:contain;" /></td>
-                <td class="title-col">POST-WELD COATING</td>
-                <td class="desc-col">Zinc spray or silver colour used for touch-up or corrosion protection of HDGI,
-                  welds, and solar structure components</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">07</span></div>
-        </section>
-        <section class="page">
-          <div class="kicker" style="margin-top: 30px;">11 · Project gallery</div>
-          <h2>Solar projects for every scale.</h2>
-          <div class="cards" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px;">
-            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
-                src="<%= basePath %>/pdfs/optimized_Residential.jpeg"
-                style="width:100%; height:120px; object-fit:cover;" />
-              <div style="padding:14px;"><b>Residential</b>
-                <p>Elegant rooftop systems designed around household consumption.</p>
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">07</span></div>
+          </section>
+          <section class="page">
+            <div class="kicker" style="margin-top: 30px;">11 · Project gallery</div>
+            <h2>Solar projects for every scale.</h2>
+            <div class="cards" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px;">
+              <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
+                  src="<%= basePath %>/pdfs/optimized_Residential.jpeg"
+                  style="width:100%; height:120px; object-fit:cover;" />
+                <div style="padding:14px;"><b>Residential</b>
+                  <p>Elegant rooftop systems designed around household consumption.</p>
+                </div>
+              </div>
+              <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
+                  src="<%= basePath %>/pdfs/commercial.png" style="width:100%; height:120px; object-fit:cover;" />
+                <div style="padding:14px;"><b>Commercial</b>
+                  <p>Business energy solutions with performance-focused planning.</p>
+                </div>
+              </div>
+              <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
+                  src="<%= basePath %>/pdfs/optimized_Industrial.jpeg"
+                  style="width:100%; height:120px; object-fit:cover;" />
+                <div style="padding:14px;"><b>Industrial</b>
+                  <p>High-capacity solar infrastructure for demanding operations.</p>
+                </div>
               </div>
             </div>
-            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
-                src="<%= basePath %>/pdfs/commercial.png" style="width:100%; height:120px; object-fit:cover;" />
-              <div style="padding:14px;"><b>Commercial</b>
-                <p>Business energy solutions with performance-focused planning.</p>
+            <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
+            <div class="kicker">12 · Customer testimonials</div>
+            <h2>Built on trust.</h2>
+            <div class="twocol">
+              <div class="quote" style="margin:0; padding:15px; font-size:16px;">“The project team made the entire
+                process—from survey to net metering—feel straightforward and well managed.”</div>
+              <div class="quote" style="margin:0; padding:15px; font-size:16px;">“Our generation is clearly visible, and
+                the savings began from the first bill cycle.”</div>
+            </div>
+            <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
+            <div class="kicker">13 · Terms & conditions</div>
+            <h2 style="margin-top:5px; margin-bottom:10px">Proposal terms at a glance.</h2>
+            <table class="table" style="margin-top:10px;">
+              <tbody>
+                <tr>
+                  <td><b>Payment terms</b></td>
+                  <td>As per mutually agreed milestone schedule.</td>
+                </tr>
+                <tr>
+                  <td><b>Project timeline</b></td>
+                  <td>Subject to site readiness, approvals and material availability.</td>
+                </tr>
+                <tr>
+                  <td><b>Warranty</b></td>
+                  <td>Applicable OEM and SMS Enterprise workmanship terms apply.</td>
+                </tr>
+                <tr>
+                  <td><b>Offer validity</b></td>
+                  <td>Pricing remains subject to stated validity and statutory changes.</td>
+                </tr>
+                <tr>
+                  <td><b>Customer responsibilities</b></td>
+                  <td>Site access, roof readiness, approvals and required documentation.</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">08</span></div>
+          </section>
+          <section class="page final-page"
+            style="padding:0 !important; display:flex !important; flex-direction:column !important; height:297mm !important; page-break-inside:avoid; page-break-before:always;">
+            <div style="padding:85px 40px 20px; flex:1;">
+              <div style="margin-bottom: 20px;">
+                <div class="kicker" style="text-transform:uppercase; letter-spacing:0.15em;">CUSTOMER ACCEPTANCE</div>
               </div>
-            </div>
-            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
-                src="<%= basePath %>/pdfs/optimized_Industrial.jpeg"
-                style="width:100%; height:120px; object-fit:cover;" />
-              <div style="padding:14px;"><b>Industrial</b>
-                <p>High-capacity solar infrastructure for demanding operations.</p>
-              </div>
-            </div>
-          </div>
-          <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
-          <div class="kicker">12 · Customer testimonials</div>
-          <h2>Built on trust.</h2>
-          <div class="twocol">
-            <div class="quote" style="margin:0; padding:15px; font-size:16px;">“The project team made the entire
-              process—from survey to net metering—feel straightforward and well managed.”</div>
-            <div class="quote" style="margin:0; padding:15px; font-size:16px;">“Our generation is clearly visible, and
-              the savings began from the first bill cycle.”</div>
-          </div>
-          <hr style="border:0;border-top:1px dashed #e8dfea;margin:25px 0" />
-          <div class="kicker">13 · Terms & conditions</div>
-          <h2 style="margin-top:5px; margin-bottom:10px">Proposal terms at a glance.</h2>
-          <table class="table" style="margin-top:10px;">
-            <tbody>
-              <tr>
-                <td><b>Payment terms</b></td>
-                <td>As per mutually agreed milestone schedule.</td>
-              </tr>
-              <tr>
-                <td><b>Project timeline</b></td>
-                <td>Subject to site readiness, approvals and material availability.</td>
-              </tr>
-              <tr>
-                <td><b>Warranty</b></td>
-                <td>Applicable OEM and SMS Enterprise workmanship terms apply.</td>
-              </tr>
-              <tr>
-                <td><b>Offer validity</b></td>
-                <td>Pricing remains subject to stated validity and statutory changes.</td>
-              </tr>
-              <tr>
-                <td><b>Customer responsibilities</b></td>
-                <td>Site access, roof readiness, approvals and required documentation.</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">08</span></div>
-        </section>
-        <section class="page final-page"
-          style="padding:0 !important; display:flex !important; flex-direction:column !important; height:297mm !important; page-break-inside:avoid; page-break-before:always;">
-          <div style="padding:85px 40px 20px; flex:1;">
-            <div style="margin-bottom: 20px;">
-              <div class="kicker" style="text-transform:uppercase; letter-spacing:0.15em;">CUSTOMER ACCEPTANCE</div>
-            </div>
-            <div class="signature"
-              style="margin-top:40px; margin-bottom: 20px; display:grid; grid-template-columns:1fr 1fr; row-gap: 30px; column-gap: 65px; align-items:end;">
-              <div>
-                <div style="border-top:1px solid #1c1620; padding-top:12px;">
-                  <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Customer signature
+              <div class="signature"
+                style="margin-top:40px; margin-bottom: 20px; display:grid; grid-template-columns:1fr 1fr; row-gap: 30px; column-gap: 65px; align-items:end;">
+                <div>
+                  <div style="border-top:1px solid #1c1620; padding-top:12px;">
+                    <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Customer
+                      signature
+                    </div>
+                    <div style="font-size:13px; color:var(--ink); font-weight:600;" data-name>
+                      <%= lead.fullName || data.fullName || "Customer" %>
+                    </div>
                   </div>
-                  <div style="font-size:13px; color:var(--ink); font-weight:600;" data-name>
-                    <%= lead.fullName || data.fullName || "Customer" %>
+                </div>
+                <div>
+                  <div style="border-top:1px solid #1c1620; padding-top:12px;">
+                    <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Company
+                      representative</div>
+                    <div style="font-size:13px; color:var(--ink); font-weight:600;" data-exec>
+                      <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
+                    </div>
+                    <div style="font-size:14px; color:var(--ink); font-weight:800; margin-top:3px;" data-exec-contact>
+                      <%= lead.assignContact || "" %>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+                  <div style="font-size:13px; color:var(--ink); font-weight:600; margin-bottom: 5px;"><span
+                      id="today2"></span></div>
+                  <div style="border-top:1px solid #1c1620; padding-top:12px;">
+                    <div style="font-size:12px; color:var(--ink); font-weight:600;">Date</div>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+                  <div
+                    style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
+                    <img src="<%= basePath %>/pdfs/stemp.jpeg"
+                      style="max-height:100%; max-width:100%; object-fit:contain; margin-left: 10px;" />
+                  </div>
+                  <div style="border-top:1px solid #1c1620; padding-top:12px;">
+                    <div style="font-size:12px; color:var(--ink); font-weight:600;">Company stamp</div>
                   </div>
                 </div>
               </div>
-              <div>
-                <div style="border-top:1px solid #1c1620; padding-top:12px;">
-                  <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Company
-                    representative</div>
-                  <div style="font-size:13px; color:var(--ink); font-weight:600;" data-exec>
-                    <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
-                  </div>
-                  <div style="font-size:14px; color:var(--ink); font-weight:800; margin-top:3px;" data-exec-contact>
-                    <%= lead.assignContact || "" %>
-                  </div>
-                </div>
-              </div>
-              <div style="display: flex; flex-direction: column; justify-content: flex-end;">
-                <div style="font-size:13px; color:var(--ink); font-weight:600; margin-bottom: 5px;"><span
-                    id="today2"></span></div>
-                <div style="border-top:1px solid #1c1620; padding-top:12px;">
-                  <div style="font-size:12px; color:var(--ink); font-weight:600;">Date</div>
-                </div>
-              </div>
-              <div style="display: flex; flex-direction: column; justify-content: flex-end;">
-                <div
-                  style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                  <img src="<%= basePath %>/pdfs/stemp.jpeg"
-                    style="max-height:100%; max-width:100%; object-fit:contain; margin-left: 10px;" />
-                </div>
-                <div style="border-top:1px solid #1c1620; padding-top:12px;">
-                  <div style="font-size:12px; color:var(--ink); font-weight:600;">Company stamp</div>
-                </div>
-              </div>
-            </div>
 
-            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);">
-              <h3
-                style="color: var(--p); font-size: 16px; font-weight: 700; margin-bottom: 15px; font-family: 'Times New Roman', Times, serif;">
-                Required Documents for Registration</h3>
-              <ul
-                style="list-style-type: disc; padding-left: 20px; color: var(--ink); font-weight: 600; font-size: 14px; line-height: 2; margin: 0;">
-                <li>Latest light bill</li>
-                <li>Latest tax bill</li>
-                <li>Cancel cheque</li>
-                <li>PAN card</li>
-                <li>Aadhaar card</li>
-              </ul>
-            </div>
-          </div>
-          <div class="thanks-half"
-            style="background:transparent;color:var(--ink);padding:40px;position:relative;display:flex;flex-direction:column;justify-content:flex-end">
-            <h1 style="margin:15px 0 10px;font-size:38px;font-family:'Times New Roman', Times, serif; color:var(--p)">
-              Thank you.</h1>
-            <div style="display:inline-flex; align-items:baseline; gap:10px;">
-              <h2 style="margin:0;font-size:24px;color:var(--ink);" data-name>
-                <%= lead.fullName || data.fullName || "Customer" %>
-              </h2>
-
-              <span style="font-size:13px;color:var(--mut);">
-                Let’s create your way to a cleaner, more independent future.
-              </span>
-            </div>
-            <div class="contact" style="margin-top:40px;line-height:1.7;color:var(--mut);font-size:11px">
-              www.sms-enterprise.com<br>Residential · Commercial · Industrial Solar EPC<br>Design · Installation · AMC ·
-              Consulting
-              <hr style="border:0;border-top:1px solid var(--line);margin:15px 0" />
-              <div style="display:flex;justify-content:space-between;color:var(--mut);font-size:10px;font-weight:600">
-                <span>SMS ENTERPRISE</span><span class="pageNum">09</span>
+              <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);">
+                <h3
+                  style="color: var(--p); font-size: 16px; font-weight: 700; margin-bottom: 15px; font-family: 'Times New Roman', Times, serif;">
+                  Required Documents for Registration</h3>
+                <ul
+                  style="list-style-type: disc; padding-left: 20px; color: var(--ink); font-weight: 600; font-size: 14px; line-height: 2; margin: 0;">
+                  <li>Latest light bill</li>
+                  <li>Latest tax bill</li>
+                  <li>Cancel cheque</li>
+                  <li>PAN card</li>
+                  <li>Aadhaar card</li>
+                </ul>
               </div>
             </div>
-          </div>
-        </section>
-      </div>
+            <div class="thanks-half"
+              style="background:transparent;color:var(--ink);padding:40px;position:relative;display:flex;flex-direction:column;justify-content:flex-end">
+              <h1 style="margin:15px 0 10px;font-size:38px;font-family:'Times New Roman', Times, serif; color:var(--p)">
+                Thank you.</h1>
+              <div style="display:inline-flex; align-items:baseline; gap:10px;">
+                <h2 style="margin:0;font-size:24px;color:var(--ink);" data-name>
+                  <%= lead.fullName || data.fullName || "Customer" %>
+                </h2>
+
+                <span style="font-size:13px;color:var(--mut);">
+                  Let’s create your way to a cleaner, more independent future.
+                </span>
+              </div>
+              <div class="contact" style="margin-top:40px;line-height:1.7;color:var(--mut);font-size:11px">
+                www.sms-enterprise.com<br>Residential · Commercial · Industrial Solar EPC<br>Design · Installation · AMC
+                ·
+                Consulting
+                <hr style="border:0;border-top:1px solid var(--line);margin:15px 0" />
+                <div style="display:flex;justify-content:space-between;color:var(--mut);font-size:10px;font-weight:600">
+                  <span>SMS ENTERPRISE</span><span class="pageNum">09</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
     </main>
   </div>
   <script>

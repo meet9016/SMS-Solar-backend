@@ -277,3 +277,79 @@ exports.staffDelete =  async (req, res) => {
     });
   }
 };
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "Old password and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "New password must be at least 6 characters long",
+      });
+    }
+
+    if (confirmPassword && newPassword !== confirmPassword) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "New password and confirm password do not match",
+      });
+    }
+
+    if (oldPassword === newPassword) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "New password cannot be the same as old password",
+      });
+    }
+
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        status: "Fail",
+        message: "Unauthorized",
+      });
+    }
+
+    let account = await STAFF.findById(userId);
+    if (!account) {
+      const USER = require("../model/user");
+      account = await USER.findById(userId);
+    }
+
+    if (!account) {
+      return res.status(404).json({
+        status: "Fail",
+        message: "User account not found",
+      });
+    }
+
+    let decryptedCurrentPassword = decryptData(account.password);
+    if (String(decryptedCurrentPassword) !== String(oldPassword)) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "Old password is incorrect",
+      });
+    }
+
+    account.password = encryptData(newPassword);
+    await account.save();
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message || "Failed to change password",
+    });
+  }
+};
